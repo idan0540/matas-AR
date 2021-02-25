@@ -27,7 +27,7 @@
 
 			const cursor = new THREE.Vector3();
 			const locations = [];
-
+			
 			init();
 			animate();
 
@@ -35,7 +35,7 @@
 
 				container = document.createElement( 'div' );
 				document.body.appendChild( container );
-
+				
 				scene = new THREE.Scene();
 
 				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 20 );
@@ -167,21 +167,23 @@
 				else if (locations.length === 1)
 					aircraft?.children[0].position.set(...locations[0])
 				else {
+
 					const smoothLocations = addMidpoints(smooth(locations));
 					const newLocIdx = Math.floor(getCurrentTravelPercent() * smoothLocations.length);
-					const currLoc = smoothLocations[newLocIdx], nextLoc = smoothLocations[(newLocIdx+5)%smoothLocations.length]
+					const currLoc = smoothLocations[newLocIdx],
+					 nextLoc = smoothLocations[(newLocIdx+1)%smoothLocations.length],
+					 prevLoc = smoothLocations[(newLocIdx -1 + smoothLocations.length)%smoothLocations.length];
 					aircraft?.children[0].position.set(...currLoc)
 					
 					const locDiff = [
-						nextLoc[0] - currLoc[0],
-						nextLoc[1] - currLoc[1],
-						nextLoc[2] - currLoc[2]
+						nextLoc[0] - prevLoc[0],
+						nextLoc[1] - prevLoc[1],
+						nextLoc[2] - prevLoc[2]
 					]
-					
-					
-					aircraft.children[0].lookAt(
-						new THREE.Vector3(currLoc[0] + locDiff[0], currLoc[1] + locDiff[2], currLoc[2] + locDiff[1])
-					)
+					const yaw = Math.atan2( locDiff[2], locDiff[0])
+					const pitch = Math.atan2( locDiff[1], Math.sqrt(locDiff[0]*locDiff[0] + locDiff[2]*locDiff[2]))
+					const q = toQuaternion(pitch, Math.PI-yaw, -Math.PI/2);
+					aircraft.children[0].setRotationFromQuaternion(q)
 				}
 			}
 
@@ -238,6 +240,25 @@
 					Math.pow(z1-z0, 2)
 				)
 			}
+
+			function toQuaternion(yaw, pitch, roll) {
+				// Abbreviations for the various angular functions
+				const cy = Math.cos(yaw * 0.5);
+				const sy = Math.sin(yaw * 0.5);
+				const cp = Math.cos(pitch * 0.5);
+				const sp = Math.sin(pitch * 0.5);
+				const cr = Math.cos(roll * 0.5);
+				const sr = Math.sin(roll * 0.5);
+
+				const q = {};
+				q.w = cr * cp * cy + sr * sp * sy;
+				q.x = sr * cp * cy - cr * sp * sy;
+				q.y = cr * sp * cy + sr * cp * sy;
+				q.z = cr * cp * sy - sr * sp * cy;
+
+				return new THREE.Quaternion(q.x, q.y, q.z, q.w);
+			}
+
 
 			
 
