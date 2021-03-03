@@ -195,11 +195,11 @@
 			} else if (locations.length === 1)
 				aircraft?.children[0].position.set(...locations[0])
 			else {
-				const smoothLocations = addMidpoints(smooth(locations));
+				const smoothLocations = addMidpoints(smooth(locations), 4);
 				const newLocIdx = Math.floor(getCurrentTravelPercent() * smoothLocations.length);
 				const currLoc = smoothLocations[newLocIdx],
-					nextLoc = smoothLocations[Math.min(newLocIdx + 1, smoothLocations.length-1)],
-					prevLoc = smoothLocations[Math.max(newLocIdx - 1, 0)];
+					nextLoc = smoothLocations[Math.min(newLocIdx + 4, smoothLocations.length-1)],
+					prevLoc = smoothLocations[Math.max(newLocIdx - 4, 0)];
 
 				aircraft?.children[0].position.set(...currLoc)
 				for (let i = 0; i < trails.length; i++) {
@@ -237,7 +237,7 @@
 			return result;
 		}
 
-		function addMidpoints(locations) {
+		function addMidpoints(locations, iterations = 1) {
 			let result = [locations[0]];
 			for (let i = 1; i < locations.length; i++) {
 				result.push(
@@ -249,6 +249,8 @@
 					locations[i]
 				);
 			}
+			if(iterations > 1) 
+				return addMidpoints(locations, iterations - 1)
 			return result;
 		}
 
