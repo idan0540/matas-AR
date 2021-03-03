@@ -82,3 +82,11 @@ a, button, input, select {
 	margin-top: 20px;
 	padding: 10px;
 }
+
+#reset {
+	position: fixed;
+	top: 10vh;
+	left: 20vw;
+	width: 30vw;
+	border-radius: 50px;
+}
