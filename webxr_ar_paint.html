@@ -9,11 +9,9 @@
 </head>
 
 <body>
-
-	<div id="info">
-		<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> ar - paint<br />(Chrome Android 81+)
+	<div id="ar-overly">
+		<button id="button-action" class="tool-button" type="button">screenshot</button><button id="button-reset" class="tool-button" type="button">reset</button>
 	</div>
-	<!-- <button id="reset">reset</button> -->
 	<script type="module">
 
 		import * as THREE from './node_modules/three/build/three.module.js';
@@ -28,9 +26,8 @@
 		let controller, painter, aircraft;
 		let animationCycleStart = new Date();
 		let trails = [];
-
+		let locations = [];
 		const cursor = new THREE.Vector3();
-		const locations = [];
 
 		init();
 		animate();
@@ -39,30 +36,54 @@
 
 			container = document.createElement('div');
 			document.body.appendChild(container);
-
 			document.body.appendChild(ARButton.createButton(renderer, {
 				optionalFeatures: ['dom-overlay', 'dom-overlay-for-handheld-ar'],
 				domOverlay: { root: document.body }
-			})
-			);
+			}));
+
 			scene = new THREE.Scene();
-
 			camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
-
-			//
-
 			renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 			renderer.setPixelRatio(window.devicePixelRatio);
 			renderer.setSize(window.innerWidth, window.innerHeight);
 			renderer.xr.enabled = true;
 			container.appendChild(renderer.domElement);
 
-			//
+			document.body.appendChild(ARButton.createButton(renderer, {
+				optionalFeatures: ['dom-overlay', 'dom-overlay-for-handheld-ar'],
+				domOverlay: { root: document.getElementById("ar-overly") }
+			}));
 
-			document.body.appendChild(ARButton.createButton(renderer));
+			document.getElementById("button-action").addEventListener("click", (e) => {
+				takeScreenshot();
+			})
 
-			// model
+			document.getElementById("button-reset").addEventListener("click", (e) => {
+				resetScene();
+			})
 
+			loadLight();
+			loadPainter();
+			loadController();
+			loadAircraft();
+			loadTrails();
+
+			window.addEventListener('resize', onWindowResize);
+		}
+
+		function takeScreenshot() {
+			const canvas = document.getElementsByTagName('canvas')[0];
+			var base64image = canvas.toDataURL("image/png");
+			window.location.href = base64image;
+		}
+
+		function resetScene() {
+			locations = [];
+			scene.remove(painter.mesh);
+			loadPainter();
+		}
+
+		function loadLight() {
 			const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
 			light.position.set(0, 1, 0);
 			scene.add(light);
@@ -70,69 +91,51 @@
 			const light2 = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 0.1);
 			light2.position.set(30, 30, 30);
 			scene.add(light2);
+		}
 
-			//
+		function loadController() {
+			function onSelectStart() {
+				this.userData.isSelecting = true;
+				this.userData.skipFrames = 2;
+			}
 
+			function onSelectEnd() {
+				this.userData.isSelecting = false;
+			}
+			controller = renderer.xr.getController(0);
+			controller.addEventListener('selectstart', onSelectStart);
+			controller.addEventListener('selectend', onSelectEnd);
+			controller.userData.skipFrames = 0;
+			scene.add(controller);
+		}
+
+		function loadPainter() {
 			painter = new TubePainter();
 			painter.setSize(0.2);
 			painter.mesh.material.transparent = true;
 			painter.mesh.material.opacity = 0.1;
 			painter.mesh.material.side = THREE.DoubleSide;
 			scene.add(painter.mesh);
+		}
 
-			//
+		function loadAircraft() {
+			new GLTFLoader()
+				.load('./iaf_spitfire_mk9/scene.gltf', function (gltf) {
+					aircraft = gltf.scene;
+					aircraft.children[0].scale.set(.05, .05, .05);
+					scene.add(aircraft);
 
-			function onSelectStart() {
+				}, undefined, function (error) {
+					console.error(error);
+				});
+		}
 
-				this.userData.isSelecting = true;
-				this.userData.skipFrames = 2;
-
-			}
-
-			function onSelectEnd() {
-
-				this.userData.isSelecting = false;
-
-			}
-
-			controller = renderer.xr.getController(0);
-			controller.addEventListener('selectstart', onSelectStart);
-			controller.addEventListener('selectend', onSelectEnd);
-			controller.userData.skipFrames = 0;
-			scene.add(controller);
-
-			//
-
-			window.addEventListener('resize', onWindowResize);
-
-			const loader = new GLTFLoader();
-
-			loader.load('./iaf_spitfire_mk9/scene.gltf', function (gltf) {
-				aircraft = gltf.scene;
-				aircraft.children[0].scale.set(.05, .05, .05);
-				scene.add(aircraft);
-
-			}, undefined, function (error) {
-				console.error(error);
-			});
-
+		function loadTrails() {
 			for (let i = 0; i < 9; i++) {
-				// loader.load('./3d_models/eye/eye.glb', function (gltf) {
-				// 	const trail = gltf.scene;
-				// 	const num = ((1 - (i / 10)) % 1) / 100
-				// 	trail.scale.set(num, num, num);
-				// 	scene.add(trail);
-				// 	trails.push(trail);
-				// }, undefined, function (error) {
-				// 	console.error(error);
-				// });
-
 				new MTLLoader()
 					.setPath('./3d_models/sod/lightblue/')
 					.load('Project Name.mtl', function (materials) {
-
 						materials.preload();
-
 						new OBJLoader()
 							.setMaterials(materials)
 							.setPath('./3d_models/sod/lightblue/')
@@ -145,80 +148,60 @@
 							}, undefined, function (error) {
 								console.error(error);
 							});
-
 					});
 			}
 		}
 
-
-
 		function onWindowResize() {
-
 			camera.aspect = window.innerWidth / window.innerHeight;
 			camera.updateProjectionMatrix();
-
 			renderer.setSize(window.innerWidth, window.innerHeight);
-
 		}
 
-		//
-
 		function handleController(controller) {
-
 			const userData = controller.userData;
-
 			cursor.set(0, 0, - 0.2).applyMatrix4(controller.matrixWorld);
-
 			if (userData.isSelecting === true) {
-
 				if (userData.skipFrames >= 0) {
-
 					// TODO(mrdoob) Revisit this
 
 					userData.skipFrames--;
-
 					painter.moveTo(cursor);
-
 				} else {
-
 					painter.lineTo(cursor);
 					locations.push([cursor.x, cursor.y, cursor.z])
 					painter.update();
-
 				}
-
 			}
-
 		}
 
 		function animate() {
-
 			renderer.setAnimationLoop(render);
-
 		}
 
 		function render() {
-
 			handleController(controller);
 			if (aircraft)
 				placeAircraft()
 			renderer.render(scene, camera);
-
 		}
 
 		function placeAircraft() {
-			if (locations.length === 0)
+			if (locations.length === 0) {
 				aircraft?.children[0].position.set(0, 0, 0)
-			else if (locations.length === 1)
+				aircraft?.children[0].rotation.set(-Math.PI / 2, 0, 0)
+				trails.forEach(trail => trail.position.set(NaN, 0, 0))
+				trails.forEach(trail => trail.rotation.set(0,0,0))
+			} else if (locations.length === 1)
 				aircraft?.children[0].position.set(...locations[0])
 			else {
 				const smoothLocations = addMidpoints(smooth(locations));
 				const newLocIdx = Math.floor(getCurrentTravelPercent() * smoothLocations.length);
 				const currLoc = smoothLocations[newLocIdx],
-					nextLoc = smoothLocations[(newLocIdx + 1) % smoothLocations.length],
-					prevLoc = smoothLocations[(newLocIdx - 1 + smoothLocations.length) % smoothLocations.length];
-				aircraft?.children[0].position.set(...currLoc)
+					nextLoc = smoothLocations[Math.max(newLocIdx + 1, smoothLocations.length-1)],
+					prevLoc = smoothLocations[Math.min(newLocIdx - 1, 0)];
 
+				aircraft?.children[0].position.set(...currLoc)
 				for (let i = 0; i < trails.length; i++) {
 					const newTrailLocIdx = Math.floor(((getCurrentTravelPercent() + 0.98 - (i / 50)) % 1) * locations.length);
 					const currTrailLoc = locations[newTrailLocIdx];
@@ -227,7 +210,6 @@
 					trails[i].rotation.z += (0.05 + i / 75);
 					trails[i].rotation.z += (0.05 + i / 75);
 				}
-
 				const locDiff = [
 					nextLoc[0] - prevLoc[0],
 					nextLoc[1] - prevLoc[1],
