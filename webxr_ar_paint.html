@@ -198,8 +198,8 @@
 				const smoothLocations = addMidpoints(smooth(locations));
 				const newLocIdx = Math.floor(getCurrentTravelPercent() * smoothLocations.length);
 				const currLoc = smoothLocations[newLocIdx],
-					nextLoc = smoothLocations[Math.max(newLocIdx + 1, smoothLocations.length-1)],
-					prevLoc = smoothLocations[Math.min(newLocIdx - 1, 0)];
+					nextLoc = smoothLocations[Math.min(newLocIdx + 1, smoothLocations.length-1)],
+					prevLoc = smoothLocations[Math.max(newLocIdx - 1, 0)];
 
 				aircraft?.children[0].position.set(...currLoc)
 				for (let i = 0; i < trails.length; i++) {
