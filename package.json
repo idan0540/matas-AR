@@ -1,0 +1,28 @@
+{
+  "name": "3d-planes",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "firebase": "^8.2.9",
+    "html2canvas": "^1.0.0-rc.7",
+    "live-server": "^1.2.1",
+    "live-server-https": "0.0.2",
+    "three": "^0.126.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "live-server --https=node_modules/live-server-https"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NoamGaash/3d-planes.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NoamGaash/3d-planes/issues"
+  },
+  "homepage": "https://github.com/NoamGaash/3d-planes#readme"
+}
